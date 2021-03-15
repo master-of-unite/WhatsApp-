@@ -1,0 +1,225 @@
+onEvent("sendBtn", "click", function() {
+  
+  var db_obj = {};
+  db_obj.from = getText("username");
+  db_obj.to = getText("to_address");
+  db_obj.msg = getText("to_msg");
+  
+  createRecord("messages", db_obj, function(record) {
+    console.log("Message stored: "+JSON.stringify(record));
+  });
+  
+  setText("to_msg","");
+  
+});
+
+// fires when anything changes in the database
+onRecordEvent("messages", function(record, eventType) {
+  console.log(("recordevent:"+eventType)+" --> "+JSON.stringify(record));
+  
+  // a new record was created, I need to check if it was intended for me
+  if (eventType === 'create') {
+    
+    // if the message is for me
+    if(record.to == getText("username")){
+      
+      // prepend to message log
+      prepend("from: "+record.from+"\n\t"+record.msg+"\n");
+      
+      // delete record?
+      // optional, but helps keep database table cleaner, and messages basically disappear
+      // after they've been received.  It means there's no way to get a message back
+      // or see what was sent later on.
+      deleteRecord("messages", record, function(delRecord){
+        
+        console.log("deleted: "+JSON.stringify(delRecord));
+      });
+    }
+    
+    console.log('record with id ' + record.id + ' was created');
+  } 
+});
+
+function prepend(msg){
+  
+  var now = new Date();
+ // changed to add a 0 after the ":" if now.getMinutes() is less than 10
+ var time = 0;
+ if(now.getMinutes < 10){
+   time = now.getHours()+":"+"0"+now.getMinutes();
+ }
+ else time = now.getHours()+":"+now.getMinutes();
+ 
+  var currentLog = getText("msg_log");
+  var newLine = time+" "+msg+"\n";
+  
+  setText("msg_log", newLine+currentLog);
+}
+
+
+
+// Wrote this in case message sent when user wasn't in the app.
+// NOTE: you could just stick this in the recordEvent handler 
+// so if a new record was created it grabs it plus any in the backlog
+function pullBacklogMessages(){
+  
+  var db_obj = {};
+  db_obj.to = getText("username");
+  
+  // get all records where "to" is for me.
+  readRecords("messages", db_obj, function(records) {
+    console.log("Backlogged messages: "+records.length);
+    for (var i =0; i < records.length; i++) {
+      prepend("from: "+records[i].from+"\n\t"+records[i].msg+"\n");
+      
+      //delete once recieved?
+      // see note above about delete
+      deleteRecord("messages", records[i], function(delRecord){
+        console.log("deleted: "+JSON.stringify(delRecord));
+      });
+      
+    }
+  });
+   
+}
+
+onEvent("Chat", "click", function(event) {
+  console.log("message clicked!");
+  //moveTo(event.x, event.y);
+});
+onEvent("Chat", "keydown", function(event) {
+  console.log("Key: " + event.key);
+});
+onEvent("ChatButton", "click", function(event) {
+  setScreen("Chat");
+});
+onEvent("MapsButton", "click", function(event) {
+  setScreen("Maps");
+});
+onEvent("BackToHome", "click", function(event) {
+  setScreen("Home");
+});
+onEvent("BackToHome2", "click", function(event) {
+  setScreen("Home");
+});
+onEvent("Login", "click", function(event) {
+  setScreen("login2");
+});
+onEvent("Register", "click", function(event) {
+  setScreen("register");
+});
+onEvent("si", "click", function(event) {
+   setText("emailinput","");
+      setText("passwordcreation","");
+      setText("passwordagain","");
+  setScreen("login2");
+});
+onEvent("register", "click", function(event) {
+  console.log("register clicked!");
+ // moveTo(event.x, event.y); *who entered this and why?*
+});
+onEvent("button2","click", function(event){
+   setText("emailinput","");
+      setText("passwordcreation","");
+      setText("passwordagain","");
+  setScreen("login");
+});
+onEvent("login2Register","click", function(event){
+      setText("login2User","");
+      setText("login2Pass","");
+  setScreen("register");
+});
+onEvent("login2Back","click", function(event){
+      setText("login2User","");
+      setText("login2Pass","");
+  setScreen("login");
+});
+onEvent("login2Login","click", function(event){
+  if(getText("login2User") == "" || getText("login2Pass") ==""){
+    showElement("login2Block");
+    showElement("block2Back");
+    onEvent("block2Back","click", function(event){
+      setText("login2User","");
+      setText("login2Pass","");
+      hideElement("login2Block");
+      hideElement("block2Back");
+    });
+  }
+  else{
+  setScreen("Home");
+  if(getText("login2User").toLowerCase().valueOf() == "heldman" || getText("login2User").toLowerCase().valueOf() == "brokamp"){  
+     var a = {};
+   a = getText("login2User");
+  setText("username",a); 
+  setText("welcome", "Welcome " +a + "!");
+      setText("login2User","");
+      setText("login2Pass","");
+      setProperty("Home","background-color","Blue");
+      setProperty("ChatButton","background-color","gold");
+      setProperty("MapsButton","background-color","gold");
+      setProperty("Admissions","background-color","gold");
+      setProperty("Help3","background-color","gold");
+      setProperty("button10","background-color","gold");
+      setProperty("label18","text-color","gold");
+      setProperty("label11","text-color","gold");
+      setProperty("welcome","text-color","gold");
+      setProperty("whattodo","text-color","gold");
+      setProperty("ChatButton","text-color","black");
+      setProperty("MapsButton","text-color","black");
+      setProperty("Admissions","text-color","black");
+      setProperty("label7","text-color","black");
+      setProperty("label12","text-color","black");
+      setProperty("label13","text-color","black");
+      setProperty("label14","text-color","black");
+      setProperty("Help3","text-color","black");
+      setProperty("button10","text-color","black");
+     
+  }
+  else{
+  var a = {};
+   a = getText("login2User");
+  setText("username",a); 
+  setText("welcome", "Welcome " + a + "!");
+      setText("login2User","");
+      setText("login2Pass","");}}
+});
+
+onEvent("register1", "click", function(event) {
+  //console.log(getText("emailinput") == "" || getText("passwordcreation") == "");             - this seemed to happen for no reason  
+
+  if(getText("passwordagain")==="" || getText("passwordcreation")==="" || getText("emailinput")==="" ){
+    setText("block","Please enter valid information.");
+    
+    showElement("block");
+    showElement("b4ck");
+    onEvent("b4ck","click",function(event){
+      setText("emailinput","");
+      setText("passwordcreation","");
+      setText("passwordagain","");
+      hideElement("block");
+      hideElement("b4ck");
+    });
+ }
+ else if(getText("passwordcreation") != getText("passwordagain")){
+   setText("block","Make sure the passwords are the same.");
+   showElement("block");
+    showElement("b4ck");
+    onEvent("b4ck","click",function(event){
+      setText("emailinput","");
+      setText("passwordcreation","");
+      setText("passwordagain","");
+      hideElement("block");
+      hideElement("b4ck");
+    });
+ }
+  else{
+   var a = {};
+   a = getText("emailinput");
+  setText("username",a); 
+  setText("welcome", "Welcome " + a + "!");
+   setText("emailinput","");
+      setText("passwordcreation","");
+      setText("passwordagain","");
+setScreen("Home");}
+});
+
